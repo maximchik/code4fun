@@ -1,0 +1,47 @@
+<html>
+	<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+	<meta property="og:image" content="http://art-duo.com/lenin/lenin.jpg" />
+<title>Лики культа &copy; Max Kalmykoff and Elena Demi-dova</title>
+<style>
+	body {margin: 0; background-color: #000000; color: #999999;}
+	canvas {width: 100%;}
+	div#tb {width: 100%; height: 100%; display: table; vertical-align: middle;}
+  div#tc {width: 100%; display: table-cell; vertical-align: middle; text-align: center;}
+  #vk_comments {
+    text-align: center;margin: 8 8 8 8;
+  }
+</style>
+<body onload="start()">
+  <div id="tb">
+    <div id="tc">
+        <canvas id="glcanvas" width="1024" height="512">
+	Try to use Google Chrome to see this site.
+	<img src="lenin.jpg">
+	</canvas>
+    </div>
+<!--LiveInternet counter--><script type="text/javascript"><!--
+document.write("<a href='//www.liveinternet.ru/click' "+
+"target=_blank><img src='//counter.yadro.ru/hit?t45.5;r"+
+escape(document.referrer)+((typeof(screen)=="undefined")?"":
+";s"+screen.width+"*"+screen.height+"*"+(screen.colorDepth?
+screen.colorDepth:screen.pixelDepth))+";u"+escape(document.URL)+
+";"+Math.random()+
+"' alt='' title='LiveInternet' "+
+"border='0' width='1' height='1'><\/a>")
+//--></script><!--/LiveInternet-->
+  </div>
+</body>
+<script>var gl,canvas,wd,ht,pcs,pSize=8,squareVerticesBuffer,squareVertIDBuffer,vertexPositionAttribute,shaderProgram,vertID=[],vertices=[],leninTex=[],leninImage=[],iterUniform,Iter=0,parUniform,prr=[],imageCount=2,imageLoaded=0;function start(){canvas=document.getElementById("glcanvas");wd=canvas.width;ht=wd/2;if(gl=initWebGL(canvas))initShaders(),initBuffers(),initTextures(),drawScene()}
+function initWebGL(a){gl=null;try{gl=a.getContext("webgl")||a.getContext("experimental-webgl")}catch(b){}gl||(alert("Unable to initialize WebGL. Your browser may not support it. Try to use Google Chrome."),gl=null);gl.viewport(0,0,wd,ht);gl.clearColor(0,0,0,1);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);return gl}
+function initShaders(){var a=getShader(gl,"shader-fs"),b=getShader(gl,"shader-vs");shaderProgram=gl.createProgram();gl.attachShader(shaderProgram,b);gl.attachShader(shaderProgram,a);gl.linkProgram(shaderProgram);gl.getProgramParameter(shaderProgram,gl.LINK_STATUS)||alert("Unable to initialize the shader program.");gl.useProgram(shaderProgram);vertexIDAttribute=gl.getAttribLocation(shaderProgram,"aVertexId");gl.enableVertexAttribArray(vertexIDAttribute);vertexPositionAttribute=gl.getAttribLocation(shaderProgram,
+"aVertexPosition");gl.enableVertexAttribArray(vertexPositionAttribute);iterUniform=gl.getUniformLocation(shaderProgram,"Iter");parUniform=gl.getUniformLocation(shaderProgram,"pars");a=[];for(b=0;b<imageCount;b++)a.push(b);gl.uniform1iv(gl.getUniformLocation(shaderProgram,"uSampler[0]"),a)}
+function getShader(a,b){var c,e,d;c=document.getElementById(b);if(!c)return null;e="";for(d=c.firstChild;d;)d.nodeType==d.TEXT_NODE&&(e+=d.textContent),d=d.nextSibling;if("x-shader/x-fragment"==c.type)c=a.createShader(a.FRAGMENT_SHADER);else if("x-shader/x-vertex"==c.type)c=a.createShader(a.VERTEX_SHADER);else return null;a.shaderSource(c,e);a.compileShader(c);return a.getShaderParameter(c,a.COMPILE_STATUS)?c:(alert("An error occurred compiling the shaders: "+a.getShaderInfoLog(c)),null)}
+function genPar(){return.1/(.1*Math.random()+Math.floor(10*Math.random())+10*Math.floor(1.5*Math.random())*Math.floor(10*Math.random())+100*Math.floor(3*Math.random()))}
+function initBuffers(){pcs=Math.floor(wd/pSize);for(var a=0;a<ht/pSize*pcs;a++)vertices[3*a]=(a%pcs*pSize-wd/2)/ht,vertices[3*a+1]=2*(ht/2-pSize*Math.floor(a/pcs))/ht,vertices[3*a+2]=0,vertID[a]=a;squareVertIDBuffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,squareVertIDBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertID),gl.STATIC_DRAW);gl.vertexAttribPointer(vertexIDAttribute,1,gl.FLOAT,!1,0,0);squareVerticesBuffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,squareVerticesBuffer);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertices),gl.STATIC_DRAW);gl.vertexAttribPointer(vertexPositionAttribute,3,gl.FLOAT,!1,0,0);for(a=0;6>a;a++)prr.push(genPar())}
+function drawScene(){for(var a=!1,b=0;6>b;b++)125==Math.floor(250*Math.random())&&(prr[b]=genPar(),a=!0);if(a){a="p: ";for(b=0;6>b;b++)a+=" / "+(0==prr[b]?1E8:1/prr[b]).toFixed(2);console.log(a)}gl.uniform1fv(parUniform,new Float32Array(prr));gl.uniform1f(iterUniform,Iter+=1);for(var b=0;b<imageCount;b++)gl.activeTexture(gl.TEXTURE0+b),gl.bindTexture(gl.TEXTURE_2D,leninTex[b]);gl.drawArrays(gl.POINT,0,vertID.length);requestAnimationFrame(drawScene)}
+function initTextures(){for(var a=0;a<imageCount;a++)leninTex[a]=gl.createTexture(),leninImage[a]=new Image,leninImage[a].onload=function(){if(++imageLoaded==imageCount)for(var a=0;a<imageCount;a++)handleTextureLoaded(leninImage[a],leninTex[a])},leninImage[a].src="Lenin_"+(a+1)+".jpg"}
+function handleTextureLoaded(a,b){gl.bindTexture(gl.TEXTURE_2D,b);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,a);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_NEAREST);gl.generateMipmap(gl.TEXTURE_2D);gl.bindTexture(gl.TEXTURE_2D,null)};</script>
+<script id="shader-fs" type="x-shader/x-fragment">uniform sampler2D uSampler[2];varying lowp vec2 CInT;varying mediump float opacity;varying lowp float texFl;void main(void){if (texFl>=0.0) gl_FragColor=vec4(vec3(1.0),opacity)*texture2D(uSampler[1],vec2(gl_PointCoord.x/128.0,gl_PointCoord.y/128.0)+CInT);else gl_FragColor=vec4(vec3(1.0),opacity)*texture2D(uSampler[0],vec2(gl_PointCoord.x/128.0,gl_PointCoord.y/128.0)+CInT);}</script>
+<script id="shader-vs" type="x-shader/x-vertex">attribute float aVertexId;attribute vec3 aVertexPosition;uniform float Iter;uniform float pars[6];varying lowp vec2 CInT;varying mediump float opacity;varying lowp float texFl;void main(void){CInT=vec2(mod(aVertexId,128.0)/128.0,floor(aVertexId/128.0)/64.0);texFl=sin(aVertexId*pars[4]+Iter*pars[5]);opacity=cos(aVertexId*pars[2]+Iter*pars[3])/4.0+0.75;gl_PointSize = 8.0+abs(sin(aVertexId*pars[0]+Iter*pars[1])*32.0);gl_Position = vec4(aVertexPosition, 1.0);}</script>
+</html>

@@ -1,0 +1,59 @@
+<html>
+<title>LETTERS &copy; Max Kalmykoff</title>
+<style>
+  body {margin: 0 0 0 0; background-color: #FFFFFF;}
+  canvas {width: 100%; height:100%;margin: 0 0 0 0;}
+</style>
+<body onload="start()" >
+  <center><canvas id="glcanvas" width="1024" height="768">
+    Your browser doesn't appear to support the HTML5 <code>&lt;canvas&gt;</code> element.
+  </canvas></center>
+</body>
+<script>
+var gl,canvas,squareVerticesBuffer,squareVertIDBuffer,mvMatrix,shaderProgram,vertexPositionAttribute,perspectiveMatrix,Iter=0,iterUniform,vertB;function start(){var a=document.getElementById("glcanvas");if(gl=initWebGL(a))gl.clearColor(1,1,1,1),gl.enable(gl.DEPTH_TEST),gl.depthFunc(gl.LEQUAL),gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT),gl.enable(gl.BLEND),gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA),initShaders(),initBuffers(),initTextures(),setInterval(drawScene,1E3/60)}
+function initWebGL(a){gl=null;try{gl=a.getContext("webgl")||a.getContext("experimental-webgl")}catch(d){}gl||(alert("Unable to initialize WebGL. Your browser may not support it."),gl=null);return gl}
+function initShaders(){var a=getShader(gl,"shader-fs"),d=getShader(gl,"shader-vs");shaderProgram=gl.createProgram();gl.attachShader(shaderProgram,d);gl.attachShader(shaderProgram,a);gl.linkProgram(shaderProgram);gl.getProgramParameter(shaderProgram,gl.LINK_STATUS)||alert("Unable to initialize the shader program.");gl.useProgram(shaderProgram);vertexIDAttribute=gl.getAttribLocation(shaderProgram,"aVertexId");gl.enableVertexAttribArray(vertexIDAttribute);vertexPositionAttribute=gl.getAttribLocation(shaderProgram,
+"aVertexPosition");gl.enableVertexAttribArray(vertexPositionAttribute);gl.uniform1i(gl.getUniformLocation(shaderProgram,"uSampler"),0);iterUniform=gl.getUniformLocation(shaderProgram,"Iter")}
+function getShader(a,d){var b,e,c;b=document.getElementById(d);if(!b)return null;e="";for(c=b.firstChild;c;)c.nodeType==c.TEXT_NODE&&(e+=c.textContent),c=c.nextSibling;if("x-shader/x-fragment"==b.type)b=a.createShader(a.FRAGMENT_SHADER);else if("x-shader/x-vertex"==b.type)b=a.createShader(a.VERTEX_SHADER);else return null;a.shaderSource(b,e);a.compileShader(b);return a.getShaderParameter(b,a.COMPILE_STATUS)?b:(alert("An error occurred compiling the shaders: "+a.getShaderInfoLog(b)),null)}
+var horizAspect=1024/768,vertID=[],vertices=[];
+function initBuffers(){for(var a=0;4E3>a;a++)vertices[3*a]=(a%52*24+7*Math.random()-3-512)/500,vertices[3*a+1]=(500-13*Math.floor(a/52))/500,vertices[3*a+2]=0,vertID[a]=Math.floor(70*Math.random())%60*1;squareVertIDBuffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,squareVertIDBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertID),gl.STATIC_DRAW);gl.vertexAttribPointer(vertexIDAttribute,1,gl.FLOAT,!1,0,0);squareVerticesBuffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,squareVerticesBuffer);gl.bufferData(gl.ARRAY_BUFFER,
+new Float32Array(vertices),gl.STATIC_DRAW);gl.vertexAttribPointer(vertexPositionAttribute,3,gl.FLOAT,!1,0,0)}function drawScene(){gl.uniform1f(iterUniform,Iter+=1);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,cubeTexture);gl.drawArrays(gl.POINT,0,vertID.length)}function initTextures(){cubeTexture=gl.createTexture();cubeImage=new Image;cubeImage.onload=function(){handleTextureLoaded(cubeImage,cubeTexture)};cubeImage.src="letters.png"}
+function handleTextureLoaded(a,d){gl.bindTexture(gl.TEXTURE_2D,d);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,a);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_NEAREST);gl.generateMipmap(gl.TEXTURE_2D);gl.bindTexture(gl.TEXTURE_2D,null)}function loadIdentity(){mvMatrix=Matrix.I(4)}function multMatrix(a){mvMatrix=mvMatrix.x(a)}
+function mvTranslate(a){multMatrix(Matrix.Translation($V([a[0],a[1],a[2]])).ensure4x4())}function setMatrixUniforms(){var a=gl.getUniformLocation(shaderProgram,"uPMatrix");gl.uniformMatrix4fv(a,!1,new Float32Array(perspectiveMatrix.flatten()));a=gl.getUniformLocation(shaderProgram,"uMVMatrix");gl.uniformMatrix4fv(a,!1,new Float32Array(mvMatrix.flatten()))};
+</script>
+<script id="shader-fs" type="x-shader/x-fragment">
+    uniform sampler2D uSampler;
+	varying lowp float  vvv;
+
+	lowp vec2 getCoordInText(lowp float id, lowp float cnt) {	
+		return vec2(mod(id,cnt)/cnt,3.5/512.0+floor(id/cnt)/cnt);
+	}
+	void main(void) {
+		gl_FragColor=texture2D(uSampler, gl_PointCoord.xy/16.0+getCoordInText(vvv,16.0))*vec4(vec3(1.0),sin(vvv)/10.0+0.80);
+	}
+
+</script>
+
+<script id="shader-vs" type="x-shader/x-vertex">
+  attribute float aVertexId;
+  attribute vec3 aVertexPosition;
+//  attribute vec4 aVertexColor;
+
+  uniform float Iter;
+  uniform mat4 uMVMatrix;
+  uniform mat4 uPMatrix;
+
+  varying lowp float  vvv;
+
+  void main(void) {
+	vvv=aVertexId;
+  	gl_PointSize = 30.0+sin(aVertexId*20.0+Iter/10.0)*10.0;
+    gl_Position = vec4(aVertexPosition, 1.0);
+  }
+
+</script>
+
+
+
+
+</html>

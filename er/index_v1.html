@@ -1,0 +1,254 @@
+<html>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+<title></title>
+<style>
+	body {margin: 0; background-color: #000000;}
+	canvas {width: 100%;}
+	div#tb {width: 100%; height: 100%; display: table; vertical-align: middle;}
+  div#tc {width: 100%; display: table-cell; vertical-align: middle; text-align: center;}
+</style>
+<body onload="start()">
+  <div id="tb">
+    <div id="tc">
+        <canvas id="glcanvas" width="1024" height="512">
+    Your browser doesn't appear to support the HTML5 <code>&lt;canvas&gt;</code> element.
+        </canvas>
+    </div>
+
+  </div>
+</body>
+<script>
+var gl,canvas, wd, ht, pcs, pSize = 8,
+    squareVerticesBuffer, squareVertIDBuffer,
+    vertexPositionAttribute, shaderProgram,
+    vertID=[], vertices=[],
+    leninTex=[], leninImage=[],
+    iterUniform, Iter=0.0,
+    parUniform, prr=[],
+    imageCount=4, imageLoaded=0;
+
+function start() {
+  canvas = document.getElementById("glcanvas");
+  wd = canvas.width;
+  ht = wd/2;
+  gl = initWebGL(canvas);
+  
+  if (gl) {
+    initShaders();   
+    initBuffers();	
+	  initTextures();
+  	drawScene();
+  }
+}
+
+function initWebGL(canvas) {
+  gl = null;  
+  try {
+    gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+  }
+  catch(e) {}
+  if (!gl) {
+    alert("Unable to initialize WebGL. Your browser may not support it.");
+    gl = null;
+  }
+  gl.viewport(0, 0, wd, ht);
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthFunc(gl.LEQUAL);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  return gl;
+}
+
+function initShaders() {
+  var fragmentShader = getShader(gl, "shader-fs");
+  var vertexShader = getShader(gl, "shader-vs");
+  
+  shaderProgram = gl.createProgram();
+  gl.attachShader(shaderProgram, vertexShader);
+  gl.attachShader(shaderProgram, fragmentShader);
+  gl.linkProgram(shaderProgram);
+  
+  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+    alert("Unable to initialize the shader program.");
+  }
+  
+  gl.useProgram(shaderProgram);
+  
+  vertexIDAttribute = gl.getAttribLocation(shaderProgram, "aVertexId");
+  gl.enableVertexAttribArray(vertexIDAttribute);
+
+  vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+  gl.enableVertexAttribArray(vertexPositionAttribute);
+
+  iterUniform = gl.getUniformLocation(shaderProgram, "Iter");
+  parUniform = gl.getUniformLocation(shaderProgram, "pars");
+
+  var us=[];
+  for (var i=0; i<imageCount; i++) us.push(i);
+  
+  gl.uniform1iv(gl.getUniformLocation(shaderProgram, "uSampler[0]"), us);
+}
+
+function getShader(gl, id) {
+  var shaderScript, theSource, currentChild, shader;
+  
+  shaderScript = document.getElementById(id);
+  
+  if (!shaderScript) return null;
+  
+  theSource = "";
+  currentChild = shaderScript.firstChild;
+
+  while(currentChild) {
+    if (currentChild.nodeType == currentChild.TEXT_NODE) {
+      theSource += currentChild.textContent;
+    }    
+    currentChild = currentChild.nextSibling;
+  }
+  if (shaderScript.type == "x-shader/x-fragment") {
+    shader = gl.createShader(gl.FRAGMENT_SHADER);
+  } else if (shaderScript.type == "x-shader/x-vertex") {
+    shader = gl.createShader(gl.VERTEX_SHADER);
+  } else return null;
+
+  gl.shaderSource(shader, theSource);
+    
+  gl.compileShader(shader);  
+    
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {  
+      alert("An error occurred compiling the shaders: " + gl.getShaderInfoLog(shader));  
+      return null;  
+  }    
+  return shader;
+}
+
+function genPar() {
+  return 0.1/(Math.random()*0.1
+        +Math.floor(Math.random()*10.0)
+        +Math.floor(Math.random()*1.5)*(Math.floor(Math.random()*10.0)*10.0)
+        +Math.floor(Math.random()*3.0)*100.0);
+}
+
+function initBuffers() {
+	pcs = Math.floor(wd/pSize);
+	for(var i=0;i<pcs*(ht/pSize); i++) {
+		vertices[i*3]=(pSize*(i%pcs)-wd/2.0)/ht;
+		vertices[i*3+1]=(ht/2.0-pSize*Math.floor(i/pcs))*2.0/ht;
+		vertices[i*3+2]=0.0;
+		vertID[i]=i;
+	}
+
+	squareVertIDBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, squareVertIDBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertID), gl.STATIC_DRAW);
+
+	gl.vertexAttribPointer(vertexIDAttribute, 1, gl.FLOAT, false, 0, 0);
+	
+	squareVerticesBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+	gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+
+  for (i=0; i<6; i++)
+  	prr.push(genPar());
+
+}
+
+function drawScene() {
+  var fl=false;
+  for (i=0; i<6; i++)
+  	if (Math.floor(Math.random()*100.0)==50) {
+  		prr[i]=genPar();
+  		fl=true;
+  	}
+
+  if (fl) {	
+  	var str="p: ";
+  	for (i=0; i<6; i++) str+=" / "+(prr[i]==0.0?100000000:1.0/prr[i]).toFixed(2);
+  	console.log(str);
+  }
+
+  gl.uniform1fv(parUniform, new Float32Array(prr));
+  gl.uniform1f(iterUniform, Iter+=1.0);
+
+  for (var i=0; i<imageCount; i++) {
+    gl.activeTexture(gl.TEXTURE0+i);
+    gl.bindTexture(gl.TEXTURE_2D, leninTex[i]); 
+  }
+
+  gl.drawArrays(gl.POINT, 0, vertID.length);
+
+  requestAnimationFrame( drawScene );
+}
+
+function initTextures() {
+  for (var i=0;i<imageCount;i++) {
+    leninTex[i] = gl.createTexture();
+    leninImage[i] = new Image();
+    leninImage[i].onload = function() {
+      if (++imageLoaded==imageCount)
+        for (var i=0;i<imageCount;i++)
+          handleTextureLoaded(leninImage[i], leninTex[i]);
+    }
+    leninImage[i].src = "er"+(i+1)+".jpg";    
+  }
+}
+
+function handleTextureLoaded(image, texture) {
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+  gl.generateMipmap(gl.TEXTURE_2D);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+}
+
+</script>
+<script id="shader-fs" type="x-shader/x-fragment">
+  uniform sampler2D uSampler[4];
+
+  varying lowp vec2 CInT;
+	varying mediump float opacity;
+  varying lowp float texFl;
+	
+  void main(void) {
+    if (texFl>=0.71)
+      gl_FragColor=vec4(vec3(1.0),opacity)*
+              texture2D(uSampler[3],vec2(gl_PointCoord.x/128.0,gl_PointCoord.y/128.0)+CInT);
+    else if (texFl>=0.0)
+      gl_FragColor=vec4(vec3(1.0),opacity)*
+              texture2D(uSampler[2],vec2(gl_PointCoord.x/128.0,gl_PointCoord.y/128.0)+CInT);
+    else if (texFl>=-0.71)
+      gl_FragColor=vec4(vec3(1.0),opacity)*
+              texture2D(uSampler[1],vec2(gl_PointCoord.x/128.0,gl_PointCoord.y/128.0)+CInT);
+    else
+      gl_FragColor=vec4(vec3(1.0),opacity)*
+              texture2D(uSampler[0],vec2(gl_PointCoord.x/128.0,gl_PointCoord.y/128.0)+CInT);
+
+	}
+
+</script>
+
+<script id="shader-vs" type="x-shader/x-vertex">
+  attribute float aVertexId;
+  attribute vec3 aVertexPosition;
+
+  uniform float Iter;
+  uniform float pars[6];
+
+  varying lowp vec2 CInT;
+  varying mediump float opacity;
+  varying lowp float texFl;
+
+  void main(void) {
+  	CInT=vec2(mod(aVertexId,128.0)/128.0,floor(aVertexId/128.0)/64.0);
+  	texFl=sin(aVertexId*pars[4]+Iter*pars[5]);
+  	opacity=cos(aVertexId*pars[2]+Iter*pars[3])/4.0+0.75;
+  	gl_PointSize = 8.0+abs(sin(aVertexId*pars[0]+Iter*pars[1])*16.0);
+    gl_Position = vec4(aVertexPosition, 1.0);
+  }
+
+</script>
+</html>
